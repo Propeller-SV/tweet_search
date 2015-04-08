@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8>
+	<title>Custom Events</title>
+	<style>
+	body { width: 600px; margin: auto; font-family: sans-serif; text-align: center; }
+	li { text-align: left; padding-bottom: 1em; }
+	</style>
+</head>
+<body>
+	
+	<h2>What Are You Interested In?</h2>
+
+	<form action="#">
+		<p><input type="text" name="q" id="q"></p>
+	</form>
+
+	<ul class="tweets"></ul>
+
+<script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+
+<script>
+
+(function($) {
+
+	var o = $( {} );
+
+	$.each({
+		trigger: 'publish',
+		on: 'subscribe',
+		off: 'unsubscribe'
+	}, function( key, api ) {
+		$[api] = function() {
+			o[key].apply( o, arguments );
+		};
+	});
+
+})(jQuery);
+
+(function($){
+	
+	var Twitter = {
+		init: function() {
+			this.template = '<li>{{tweet}}</li>';
+			this.query = '@tutspremium';
+			this.tweets = [];
+			this.timer;
+
+			this.cache();
+			this.bindEvents();
+			this.subscriptions();
+
+			// default state
+			this.searchInput.val( this.query );
+			$.publish( 'twitter/query' );
+
+			return this;
+		},
+
+		cache: function() {
+			this.container = $('ul.tweets');
+			this.searchInput = $('#q');
+		},
+
+		bindEvents: function() {
+			this.searchInput.on( 'keyup', this.search );
+		},
+
+		subscriptions: function() {
+			$.subscribe( 'twitter/query', this.fetchJSON );
+			$.subscribe( 'twitter/results', this.renderResults );			
+		},
+
+		search: function() {
+			var self = Twitter,
+				input = this;
+			clearTimeout( self.timer );
+
+			self.timer = ( input.value.length >= 3 ) && setTimeout(function() {
+				self.query = input.value;
+				$.publish( 'twitter/query' );
+			}, 400);
+		},
+
+		fetchJSON: function() {
+			return $.ajax({
+					dataType: 'json',
+					type: 'POST',
+					url: 'get_tweets.php',
+					data: { 'foo': Twitter.query },
+
+					success: function( results ) {
+						Twitter.tweets = results.statuses;
+						$.publish( 'twitter/results' );
+						console.log(Twitter.tweets);
+					}
+			})
+		},
+
+		renderResults: function() {
+			var self = Twitter,
+				frag = [],
+				tweet;
+
+			self.container.html(
+				$.map( self.tweets, function( obj, index ) {
+					var t =
+						obj.text.replace(/(http:[^\s]+)/, '<a href="$1">$1</a>')
+								.replace(/@([^\s:]+)/, '<a href="http://twitter.com/$1">@$1</a>');
+					return self.template.replace(/{{tweet}}/, t);
+				}).join('')
+			);
+			
+		}
+	};
+
+	window.Twitter = Twitter.init();
+
+})(jQuery);
+
+</script>
+
+</body>
+</html>
+
+
+
+

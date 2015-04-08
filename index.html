@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset=utf-8>
+	<title>Custom Events</title>
+</head>
+<body>
+	
+	<h1>Hi there!</h1>
+
+<script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+
+<script>
+
+(function( $ ){
+
+	var o = $( {} );
+
+	$.each({
+		trigger: 'publish',
+		on: 'subscribe',
+		off: 'unsubscribe'
+	}, function( key,val ) {
+		jQuery[val] = function() {
+			o[key].apply( o, arguments );
+		};
+	});
+
+})( jQuery );
+
+$.getJSON( 'get_tweets.php', function ( results ) {
+	// any processing you want
+	$.publish( 'twitter/results', results );
+});
+
+//  ...
+ 
+$.subscribe( 'twitter/results', function( e, results ) {
+	$('body').html(
+		$.map( results.statuses, function( obj, index ) {
+			return '<li>' + obj.text + '</li>';
+		}).join('')
+	);
+});
+
+/*
+$('body').on('app/x', function() {
+	console.log('clicked!');
+});
+
+$('body').trigger('app/x');*/
+
+/*
+$.getJSON( 'get_tweets.php', function ( results ) {
+	// any processing you want
+	$(document).trigger('twitter/results', results);
+});
+
+$(document).on('twitter/results', function( e, results ) {
+	console.log(results);
+});*/
+
+</script>
+
+</body>
+</html>
+
+
+
+
